@@ -19,39 +19,38 @@ storage, and Google OAuth sign-in for the owner account.
 
 - Node.js 22.13+ (uses built-in `node:sqlite`; tested on Node 24)
 - pnpm 11.25.0
-- nginx
+- nginx runs on a separate reverse-proxy VM
 
-## Setup on a server
+## Setup on the servers (two-VM layout)
+
+**App VM** — runs the Node server (nginx runs on a separate RP VM):
 
 ```sh
-# 1. Code + dependencies
-git clone <this repo> /opt/classroom-notes && cd /opt/classroom-notes
-pnpm install --frozen-lockfile
-
-# 2. Google OAuth credentials
-cp .env.example .env.local   # fill in GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
-# In Google Cloud Console → APIs & Services → Credentials, create a
-# "Web application" OAuth client with redirect URI:
-#   https://YOUR-DOMAIN/api/auth/callback
-
-# 3. Origin and database
-export APP_ORIGIN=https://YOUR-DOMAIN        # must match the redirect URI above
-npm run init:db                              # creates data/classroom.db once
-
-# 4. Build and run as a service
+git clone https://github.com/drguptavivek/classroom-notes.git /opt/classroom-notes
+cd /opt/classroom-notes && pnpm install --frozen-lockfile
+cp .env.example .env   # fill in Turso + Google credentials + APP_ORIGIN=https://classroom.aiims.app
+npm run init:db        # once
 npm run build
 sudo cp deploy/classroom-notes.service /etc/systemd/system/
-sudo systemctl edit --full classroom-notes   # set WorkingDirectory/APP_ORIGIN paths
 sudo systemctl enable --now classroom-notes
-
-# 5. nginx
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/classroom-notes
-# edit server_name, then:
-sudo ln -s /etc/nginx/sites-available/classroom-notes /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
 ```
 
-For HTTPS use certbot (`sudo certbot --nginx`) after nginx is serving.
+The server listens on `0.0.0.0:3000`. Restrict port 3000 to the RP VM's IP
+(`ufw allow from <RP_VM_IP> to any port 3000`) — all public traffic goes
+through nginx.
+
+**Reverse-proxy VM** — TLS + proxy (see `deploy/nginx-rp.conf`):
+
+```sh
+sudo cp deploy/nginx-rp.conf /etc/nginx/sites-available/classroom-notes
+sudo sed -i 's/APP_VM_IP/<app VM IP>/' /etc/nginx/sites-available/classroom-notes
+sudo ln -s /etc/nginx/sites-available/classroom-notes /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot certonly --nginx -d classroom.aiims.app   # then reload
+sudo certbot renew --dry-run
+```
+
+Google OAuth redirect URI: `https://classroom.aiims.app/api/auth/callback`.
 
 ## Local development
 
