@@ -21,13 +21,8 @@ export async function GET(req: Request) {
   auth.searchParams.set('scope', 'openid email profile');
   auth.searchParams.set('state', state);
   auth.searchParams.set('prompt', 'select_account');
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: auth.toString(),
-      'Set-Cookie': `cn_oauth_state=${state}; Path=/api/auth/; HttpOnly; SameSite=Lax; Max-Age=600`
-        + `, cn_oauth_return=${encodeURIComponent(returnTo)}; Path=/api/auth/; HttpOnly; SameSite=Lax; Max-Age=600`,
-      'Cache-Control': 'no-store',
-    },
-  });
+  const headers = new Headers({ Location: auth.toString(), 'Cache-Control': 'no-store' });
+  headers.append('Set-Cookie', `cn_oauth_state=${state}; Path=/api/auth/; HttpOnly; SameSite=Lax; Max-Age=600`);
+  headers.append('Set-Cookie', `cn_oauth_return=${encodeURIComponent(returnTo)}; Path=/api/auth/; HttpOnly; SameSite=Lax; Max-Age=600`);
+  return new Response(null, { status: 302, headers });
 }

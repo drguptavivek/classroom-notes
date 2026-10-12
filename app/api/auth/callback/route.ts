@@ -38,14 +38,9 @@ export async function GET(req: Request) {
   try { target = decodeURIComponent(returnTo || '/') || '/'; } catch { target = '/'; }
   if (!target.startsWith('/') || target.startsWith('//') || target.startsWith('/api/auth/')) target = '/';
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: target,
-      'Set-Cookie': sessionCookie({ userId: 'google:' + info.sub, email: info.email, displayName: info.name || info.email, fullName: info.name || null })
-        + `, cn_oauth_state=; Path=/api/auth/; HttpOnly; Max-Age=0`
-        + `, cn_oauth_return=; Path=/api/auth/; HttpOnly; Max-Age=0`,
-      'Cache-Control': 'no-store',
-    },
-  });
+  const headers = new Headers({ Location: target, 'Cache-Control': 'no-store' });
+  headers.append('Set-Cookie', sessionCookie({ userId: 'google:' + info.sub, email: info.email, displayName: info.name || info.email, fullName: info.name || null }));
+  headers.append('Set-Cookie', 'cn_oauth_state=; Path=/api/auth/; HttpOnly; Max-Age=0');
+  headers.append('Set-Cookie', 'cn_oauth_return=; Path=/api/auth/; HttpOnly; Max-Age=0');
+  return new Response(null, { status: 302, headers });
 }
