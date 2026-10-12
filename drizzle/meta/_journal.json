@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791813018675,
+      "tag": "0000_outgoing_shiva",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791813358360,
+      "tag": "0001_worthless_brother_voodoo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791814325237,
+      "tag": "0002_married_shiva",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+# systemd unit for the application VM (nginx runs on a separate RP VM).
+[Unit]
+Description=Classroom Notes (Vinext/Node)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/classroom-notes
+# .env on this VM supplies TURSO_DATABASE_URL/TURSO_TOKEN, GOOGLE_CLIENT_ID/SECRET
+# and APP_ORIGIN=https://classroom.aiims.app (the RP terminates TLS).
+ExecStart=/usr/bin/env npm run start
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/classroom-notes/data
+
+[Install]
+WantedBy=multi-user.target

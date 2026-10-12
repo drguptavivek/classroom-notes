@@ -1,0 +1,4 @@
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+export const exercises = sqliteTable('exercises', { code: text('code').primaryKey(), title: text('title').notNull(), prompt: text('prompt').notNull(), adminHash: text('admin_hash').notNull(), open: integer('open').notNull().default(1), revealed: integer('revealed').notNull().default(0), created: text('created').notNull(), questions: text('questions').notNull().default('[]'), active: integer('active').notNull().default(1), revision: integer('revision').notNull().default(1), ownerUserId: text('owner_user_id').notNull().default('') });
+export const responses = sqliteTable('responses', { id: text('id').primaryKey(), code: text('code').notNull(), body: text('body').notNull(), created: text('created').notNull(), answers: text('answers').notNull().default('{}') });
+export const settings = sqliteTable('settings', { key: text('key').primaryKey(), value: text('value').notNull() });
