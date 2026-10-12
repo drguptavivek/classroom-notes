@@ -22,6 +22,7 @@ interface Word {
   size: number;
   count: number;
   responses: number[];
+  color: string;
   x?: number;
   y?: number;
   rotate?: number;
@@ -47,16 +48,25 @@ function mergePhrases(items: CloudItem[]): Phrase[] {
   return [...byPhrase.values()];
 }
 
+const PALETTE = ['#7ab8ff', '#ffd166', '#8fe3b0', '#ff9e9e', '#d0a8ff', '#7ee0d2', '#ffc38f'];
+
 export default function Cloud({ items, onClose }: { items: CloudItem[]; onClose(): void }) {
   const areaRef = useRef<HTMLDivElement>(null);
   const [words, setWords] = useState<Word[]>([]);
   const phrases = useMemo(() => mergePhrases(items), [items]);
+  // The parent re-renders on a 4 s poll, producing a new items array each
+  // time. Only re-run the (expensive) layout when content or size changes.
+  const signature = useMemo(() => JSON.stringify(phrases.map((p) => [p.display, p.count])), [phrases]);
+  const lastLayout = useRef('');
 
   useEffect(() => {
     const area = areaRef.current;
     if (!area) return;
     const W = area.clientWidth, H = area.clientHeight;
     if (!W || !H) return;
+    const sizeKey = signature + '@' + W + 'x' + H;
+    if (lastLayout.current === sizeKey) return;
+    lastLayout.current = sizeKey;
 
     const maxSize = Math.min(72, Math.max(20, Math.floor(H / 10)));
     const minSize = 13;
@@ -66,12 +76,13 @@ export default function Cloud({ items, onClose }: { items: CloudItem[]; onClose(
       .rotate(() => 0)   // phrases stay horizontal for classroom readability
       .spiral('archimedean')
       .font('system-ui, -apple-system, "Segoe UI", Roboto, sans-serif')
-      .words(phrases.map((p) => ({
+      .words(phrases.map((p, i) => ({
         // The ×count suffix is part of the rendered text so d3-cloud
         // reserves width for it — otherwise counted phrases overlap.
         text: p.count > 1 ? `${p.display} ×${p.count}` : p.display,
         count: p.count,
         responses: p.responses,
+        color: PALETTE[i % PALETTE.length],
         size: Math.max(minSize, Math.min(
           64,
           (1800 / Math.max(8, p.display.length)) * Math.max(1, p.count) ** 0.3,
@@ -107,8 +118,7 @@ export default function Cloud({ items, onClose }: { items: CloudItem[]; onClose(
           {words.map((w, i) => (
             <text key={i} textAnchor="middle"
               transform={`translate(${w.x},${w.y}) rotate(${w.rotate || 0})`}
-              style={{ fontSize: w.size, fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', fill: 'currentColor' }}
-              opacity={0.6 + 0.4 * Math.min(1, w.size / maxSizeOf(words))}>
+              style={{ fontSize: w.size, fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', fill: w.color }}>
               {w.text}
             </text>
           ))}
